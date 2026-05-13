@@ -6,7 +6,7 @@ const pains = [
   {
     emoji: '',
     pain: 'Masih jawab pertanyaan harga lewat DM satu-satu setiap hari?',
-    hint: 'Ada cara lebih efisien — katalog produk online yang bisa dibagikan sekali, diakses selamanya.',
+    hint: 'Ada cara lebih efisien, katalog produk online yang bisa dibagikan sekali, diakses selamanya.',
     color: '#831449',
   },
   {
@@ -18,7 +18,7 @@ const pains = [
   {
     emoji: '',
     pain: 'Promosi sudah jalan, tapi tidak tahu berapa yang lihat dan berapa yang beli?',
-    hint: 'Sistem digital yang tepat kasih kamu data nyata — bukan cuma perasaan.',
+    hint: 'Sistem digital yang tepat kasih kamu data nyata, bukan cuma perasaan.',
     color: '#b76431',
   },
   {
@@ -54,7 +54,7 @@ export default function PainPoints() {
             <span className="text-[#831449]"> familiar?</span>
           </h2>
           <p className="text-[#666] mt-3 text-base md:text-lg max-w-xl leading-relaxed">
-            Masalah-masalah ini bukan karena bisnis kamu kurang bagus — tapi karena belum ada sistem yang mendukungnya.
+            Masalah-masalah ini bukan karena bisnis kamu kurang bagus, tapi karena belum ada sistem yang mendukungnya.
           </p>
         </motion.div>
 

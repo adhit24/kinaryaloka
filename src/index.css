@@ -37,6 +37,19 @@
   .card-lift {
     @apply transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl;
   }
+
+  .label-admin {
+    @apply text-xs font-bold text-white/50 uppercase tracking-wider block mb-1.5;
+  }
+
+  .input-admin {
+    @apply w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-white text-sm
+           placeholder-white/25 focus:outline-none focus:border-[#831449]/60 transition-colors;
+  }
+
+  select.input-admin option {
+    @apply bg-[#1a1a1a] text-white;
+  }
 }
 
 /* Custom scrollbar */
