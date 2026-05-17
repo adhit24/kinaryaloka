@@ -805,8 +805,8 @@ function getResponse(
   // ── Fast-track: direct product request outside consultation flow ──
   if (
     consult.step === 'idle' &&
-    (intent === 'product_ecommerce' || intent === 'product_webdesign' || intent === 'product_branding') &&
-    entities.productTypes &&
+    (intent === 'product_ecommerce' || intent === 'product_webdesign' || intent === 'product_branding' || intent === 'consult') &&
+    entities.productTypes && entities.productTypes.length > 0 &&
     (entities.productTypes.length > 1 || entities.budget)
   ) {
     const catMap: Record<string, { label: string; products: typeof allProducts }> = {
