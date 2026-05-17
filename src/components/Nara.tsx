@@ -200,6 +200,65 @@ function normalize(text: string): string {
   return text.toLowerCase().replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim()
 }
 
+// ─── Stopwords ────────────────────────────────────────────────────────────────
+const STOPWORDS = new Set([
+  'yang', 'dan', 'di', 'ke', 'dari', 'ini', 'itu', 'untuk', 'dengan', 'pada',
+  'adalah', 'atau', 'juga', 'kamu', 'anda', 'akan', 'kalian', 'mereka',
+  'dong', 'sih', 'deh', 'nih', 'lah', 'ya', 'yah', 'kak', 'bang', 'mas', 'mbak',
+])
+
+// ─── Naive Bayes Classifier ───────────────────────────────────────────────────
+class NaiveBayesClassifier {
+  private wordCounts: Map<string, Map<string, number>> = new Map()
+  private classCounts: Map<string, number> = new Map()
+  private vocab: Set<string> = new Set()
+  private totalDocs = 0
+
+  private tokenize(text: string): string[] {
+    return normalize(text).split(' ').filter(w => w.length > 1 && !STOPWORDS.has(w))
+  }
+
+  train(intent: string, examples: string[]): void {
+    if (!this.wordCounts.has(intent)) this.wordCounts.set(intent, new Map())
+    for (const ex of examples) {
+      const words = this.tokenize(ex)
+      this.classCounts.set(intent, (this.classCounts.get(intent) || 0) + 1)
+      this.totalDocs++
+      const wc = this.wordCounts.get(intent)!
+      for (const w of words) {
+        this.vocab.add(w)
+        wc.set(w, (wc.get(w) || 0) + 1)
+      }
+    }
+  }
+
+  addExample(intent: string, text: string): void {
+    this.train(intent, [text])
+  }
+
+  predict(text: string): { intent: string; confidence: number } {
+    const words = this.tokenize(text)
+    if (words.length === 0 || this.totalDocs === 0) return { intent: 'unknown', confidence: 0 }
+    const vocabSize = this.vocab.size
+    const allScores: [string, number][] = []
+    for (const [intent, count] of this.classCounts) {
+      const logPrior = Math.log(count / this.totalDocs)
+      const wc = this.wordCounts.get(intent)!
+      const totalWords = Array.from(wc.values()).reduce((a, b) => a + b, 0)
+      let logLikelihood = 0
+      for (const word of words) {
+        logLikelihood += Math.log(((wc.get(word) || 0) + 1) / (totalWords + vocabSize))
+      }
+      allScores.push([intent, logPrior + logLikelihood])
+    }
+    const maxScore = Math.max(...allScores.map(([, s]) => s))
+    const expScores = allScores.map(([i, s]) => [i, Math.exp(s - maxScore)] as [string, number])
+    const sumExp = expScores.reduce((acc, [, e]) => acc + e, 0)
+    expScores.sort((a, b) => b[1] - a[1])
+    return { intent: expScores[0][0], confidence: expScores[0][1] / sumExp }
+  }
+}
+
 function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)]
 }
@@ -218,13 +277,322 @@ const customIntentResponses: Map<string, string> = new Map()
 
 function addDynamicKeyword(word: string, intent: Intent) {
   const n = normalize(word)
-  if (n.length > 1) dynamicKeywords.set(n, intent)
+  if (n.length > 1) {
+    dynamicKeywords.set(n, intent)
+    classifier.addExample(intent, word)
+  }
 }
 
 function clearDynamicKeywords() {
   dynamicKeywords.clear()
   customIntentResponses.clear()
 }
+
+// ─── Training Data & Classifier Init ─────────────────────────────────────────
+const TRAINING_DATA: Array<[string, string[]]> = [
+  ['greeting', [
+    'halo', 'hai', 'hi', 'hello', 'selamat pagi', 'selamat siang', 'selamat malam',
+    'selamat sore', 'assalamualaikum', 'permisi', 'hei', 'hay', 'haloo',
+    'pagi kak', 'malam kak', 'halo kinaryaloka', 'hai nara', 'halo ada yang bisa bantu',
+  ]],
+  ['about', [
+    'siapa kinaryaloka', 'kinaryaloka itu apa', 'tentang kinaryaloka', 'kalian siapa',
+    'profil perusahaan kalian', 'latar belakang kinaryaloka', 'studio ini apa',
+    'ceritakan tentang kalian', 'kinaryaloka itu gimana', 'apa itu kinaryaloka digital studio',
+    'perusahaan kalian bergerak di bidang apa', 'tolong perkenalkan kinaryaloka',
+  ]],
+  ['history', [
+    'sejak kapan beroperasi', 'kapan kinaryaloka berdiri', 'kapan didirikan',
+    'sudah berapa lama beroperasi', 'berdiri tahun berapa', 'kapan mulai beroperasi',
+    'mulai kapan kinaryaloka ada', 'tahun berapa kinaryaloka berdiri',
+    'kapan kinaryaloka lahir', 'umur perusahaan berapa', 'kinaryaloka sudah ada sejak kapan',
+    'berapa lama sudah berdiri', 'kapan dibuat', 'sudah berumur berapa',
+  ]],
+  ['values', [
+    'nilai perusahaan', 'value kinaryaloka', 'filosofi kerja', 'prinsip yang dipegang',
+    'visi misi kinaryaloka', 'budaya kerja kalian', 'apa yang dipercaya kinaryaloka',
+    'landasan kinaryaloka', 'nilai-nilai kalian apa', 'kinaryaloka berprinsip apa',
+    'apa visi kalian', 'misi perusahaan kalian',
+  ]],
+  ['process', [
+    'cara kerja kalian', 'alur kerja', 'langkah pengerjaan', 'cara order layanan',
+    'prosedur pemesanan', 'mulai dari mana', 'tahap pengerjaan project', 'gimana cara mulai',
+    'proses pengerjaan', 'cara pesan layanan', 'bagaimana alurnya', 'step pengerjaan',
+    'urutan kerja kalian', 'cara memulai project',
+  ]],
+  ['commitment', [
+    'garansi apa saja', 'komitmen kalian', 'jaminan yang diberikan',
+    'akurasi produk akhir berapa', 'garansi tersedia', 'komitmen apa yang diberikan',
+    'apa yang dijamin kinaryaloka', 'jaminan kerjaan', 'seberapa committed kalian',
+    'garansi kerjaan bagaimana', 'jaminan hasil kerja',
+  ]],
+  ['sharia', [
+    'apakah halal', 'prinsip syariah kinaryaloka', 'apakah sesuai hukum islam',
+    'project haram boleh tidak', 'prinsip agama kalian', 'syariah compliant tidak',
+    'boleh project perjudian', 'islami tidak kinaryaloka', 'berprinsip syariah',
+    'proyek alkohol bisa', 'proyek tidak islami',
+  ]],
+  ['product_ecommerce', [
+    'toko online', 'e-commerce', 'olshop', 'katalog digital produk',
+    'jualan online', 'belanja online', 'payment gateway', 'keranjang belanja',
+    'paket e-commerce apa', 'bikin toko online', 'ingin jual produk online',
+    'butuh website jualan', 'paket olshop berapa', 'website untuk jualan',
+  ]],
+  ['product_webdesign', [
+    'bikin website', 'butuh website', 'desain website', 'website profesional',
+    'reservasi online', 'sistem booking', 'landing page', 'web profil bisnis',
+    'paket website berapa', 'halaman web bisnis', 'website untuk bisnis saya',
+    'paket reservasi', 'website booking online', 'situs web profesional',
+  ]],
+  ['product_branding', [
+    'desain logo', 'brand identity', 'identitas visual brand', 'bikin logo bisnis',
+    'copywriting bisnis', 'tagline bisnis', 'desain brand', 'logo perusahaan saya',
+    'warna brand bisnis', 'identitas merek', 'butuh logo baru', 'paket branding',
+    'brand bisnis saya', 'visual identity bisnis',
+  ]],
+  ['product_all', [
+    'semua produk', 'daftar produk kalian', 'produk apa saja', 'layanan apa saja',
+    'paket apa yang tersedia', 'ada apa saja', 'ada berapa produk',
+    'berapa jenis layanan', 'apa saja yang ditawarkan', 'sebutkan semua produk',
+    'jenis jasa apa saja', 'list semua paket', 'tampilkan semua layanan',
+    'apa saja yang bisa dikerjakan kalian',
+  ]],
+  ['price', [
+    'berapa harga paket', 'biaya paket berapa', 'tarif layanan berapa',
+    'budget yang dibutuhkan', 'investasi berapa untuk website', 'harga toko online berapa',
+    'biaya website berapa', 'mahal tidak', 'harga branding berapa', 'biaya e-commerce',
+    'berapa bayarnya', 'paket termurah berapa', 'kisaran harga kalian', 'info harga',
+    'butuh dana berapa', 'kira-kira dana berapa', 'perlu dana berapa',
+    'anggaran berapa', 'modalnya berapa', 'budget awal berapa', 'dana yang diperlukan',
+    'kira-kira biayanya berapa', 'estimasi biaya berapa', 'harganya kira-kira berapa',
+  ]],
+  ['consult', [
+    'butuh saran paket', 'tolong rekomendasikan paket', 'paket mana yang cocok',
+    'bantu pilih paket', 'bingung mau pilih apa', 'tidak tahu mulai dari mana',
+    'cocok untuk bisnis saya paket apa', 'rekomendasikan paket untuk saya',
+    'minta saran pilih paket', 'konsultasi gratis', 'mau konsultasi',
+    'bantu saya pilih paket', 'pilihkan yang terbaik untuk saya',
+  ]],
+  ['payment', [
+    'metode pembayaran apa saja', 'bisa transfer bank', 'dp berapa persen',
+    'uang muka berapa', 'cicilan tersedia tidak', 'bayar setelah selesai bisa',
+    'sistem dp bagaimana', 'bisa pakai gopay ovo', 'qris tersedia',
+    'cara bayar bagaimana', 'invoice ada tidak', 'pelunasan kapan', 'bisa cicilan',
+  ]],
+  ['timeline', [
+    'berapa lama pengerjaan', 'estimasi waktu pengerjaan', 'kapan selesai project',
+    'deadline project berapa lama', 'lama bikin website berapa', 'durasi pengerjaan berapa',
+    'waktu pengerjaan berapa hari', 'cepat tidak pengerjaannya',
+    'timeline project berapa lama', 'estimasi hari pengerjaan',
+    'berapa minggu bisa selesai', 'berapa hari selesainya', 'pengerjaan makan waktu berapa lama',
+  ]],
+  ['revision', [
+    'bisa direvisi tidak', 'berapa kali revisi', 'ubah desain bisa',
+    'ganti desain kalau tidak puas', 'edit ulang boleh', 'revisi gratis tidak',
+    'kebijakan revisi bagaimana', 'kalau tidak suka bisa diganti', 'revisi berapa putaran',
+    'desain tidak sesuai minta ganti', 'minta perubahan desain',
+  ]],
+  ['portfolio', [
+    'contoh hasil kerja kalian', 'portofolio kinaryaloka', 'pernah bikin apa saja',
+    'hasil project sebelumnya', 'karya kinaryaloka', 'lihat contoh website kalian',
+    'contoh desain kalian', 'sudah pernah bikin project apa', 'referensi pekerjaan',
+    'contoh project yang pernah dibuat',
+  ]],
+  ['team', [
+    'siapa timnya kinaryaloka', 'berapa orang di tim', 'developer kalian siapa',
+    'desainer kalian siapa', 'programmer tim kalian', 'karyawan berapa orang',
+    'anggota tim kinaryaloka siapa', 'siapa yang mengerjakan project',
+    'tim terdiri dari siapa saja', 'ada berapa orang di tim kalian',
+  ]],
+  ['location', [
+    'alamat kantor kalian', 'lokasi kinaryaloka dimana', 'bisa ketemu langsung tidak',
+    'offline meeting bisa', 'dimana kantornya', 'tatap muka bisa tidak',
+    'ada kantor fisik tidak', 'meeting langsung bisa tidak', 'kota mana domisili',
+    'domisili kalian dimana', 'bertemu secara langsung bisa',
+  ]],
+  ['after_project', [
+    'support setelah project selesai', 'maintenance tersedia tidak', 'ada bug setelah selesai bagaimana',
+    'update setelah delivery bisa', 'kelanjutan setelah project', 'garansi setelah selesai ada',
+    'kalau error setelah launch bagaimana', 'support teknis jangka panjang ada',
+    'after service ada tidak', 'jaminan setelah project selesai',
+  ]],
+  ['followup', [
+    'jelaskan lebih lanjut', 'ceritakan lebih detail', 'maksudnya apa',
+    'bisa diperjelas lebih', 'elaborasi lebih lanjut dong', 'contoh konkretnya gimana',
+    'lebih detail lagi', 'tolong perjelas', 'saya kurang paham',
+    'bisa dijelaskan ulang', 'gimana maksudnya itu',
+  ]],
+  ['whatsapp', [
+    'hubungi via whatsapp', 'chat langsung wa', 'nomor whatsapp kalian berapa',
+    'kontak kalian apa', 'wa kalian berapa', 'kirim pesan ke wa sekarang',
+    'mau chat langsung', 'cara menghubungi kalian', 'bisa telepon tidak',
+    'contact kalian', 'hubungi sekarang lewat wa',
+  ]],
+  ['thanks', [
+    'terima kasih', 'makasih banyak', 'thanks', 'thank you', 'oke siap',
+    'mantap sekali', 'keren banget', 'sangat membantu sekali', 'helpful banget',
+    'terimakasih', 'makasih ya', 'thx', 'oke terimakasih', 'sudah cukup terimakasih',
+  ]],
+]
+
+const classifier = new NaiveBayesClassifier()
+TRAINING_DATA.forEach(([intent, examples]) => classifier.train(intent, examples))
+
+// ─── Entity Extractor ─────────────────────────────────────────────────────────
+interface ExtractedEntities {
+  budget?: number                              // dalam ribuan IDR (5000 = 5 juta)
+  bizCategory?: string                         // kategori bisnis user
+  productType?: 'ecommerce' | 'webdesign' | 'branding'
+  productTypes?: Array<'ecommerce' | 'webdesign' | 'branding'>
+}
+
+function extractEntities(text: string): ExtractedEntities {
+  const t = text.toLowerCase()
+  const result: ExtractedEntities = {}
+
+  // Budget: "3 juta", "2.5 jt", "500 ribu", "500rb"
+  const jm = /(\d+(?:[.,]\d+)?)\s*(?:juta|jt)\b/.exec(t)
+  if (jm) {
+    result.budget = Math.round(parseFloat(jm[1].replace(',', '.')) * 1000)
+  } else {
+    const rm = /(\d+(?:[.,]\d+)?)\s*(?:ribu|rb)\b/.exec(t)
+    if (rm) result.budget = Math.round(parseFloat(rm[1].replace(',', '.')))
+  }
+
+  // Business category
+  const catRules: [RegExp, string][] = [
+    [/kuliner|fnb|makanan|minuman|restoran|cafe|warung|kopi/, 'Kuliner / F&B'],
+    [/fashion|pakaian|baju|clothing|distro|outfit/, 'Fashion & Pakaian'],
+    [/kecantikan|salon|beauty|skincare|kosmetik|spa/, 'Kecantikan & Salon'],
+    [/jasa|konsultan|service|agensi/, 'Jasa & Layanan'],
+    [/retail|toko fisik|offline store|minimarket/, 'Retail / Toko Fisik'],
+  ]
+  for (const [re, label] of catRules) {
+    if (re.test(t)) { result.bizCategory = label; break }
+  }
+
+  // Product type interest - detect all mentioned types
+  const detectedPTypes: Array<'ecommerce' | 'webdesign' | 'branding'> = []
+  if (/toko online|olshop|jualan online|e.commerce/.test(t)) detectedPTypes.push('ecommerce')
+  if (/website|web design|reservasi|booking|landing page/.test(t)) detectedPTypes.push('webdesign')
+  if (/logo|brand|branding|desain logo|identitas visual|copywriting/.test(t)) detectedPTypes.push('branding')
+  if (detectedPTypes.length > 0) {
+    result.productTypes = detectedPTypes
+    result.productType = detectedPTypes[0]
+  }
+
+  return result
+}
+
+// ─── Sentiment Detector ───────────────────────────────────────────────────────
+type SentimentLabel = 'positive' | 'negative' | 'frustrated' | 'neutral'
+
+interface Sentiment {
+  label: SentimentLabel
+  score: number    // -1.0 to 1.0
+}
+
+const SENTIMENT_WORDS = {
+  positive: ['bagus', 'keren', 'mantap', 'suka', 'senang', 'cocok', 'pas', 'setuju', 'menarik',
+             'tertarik', 'ingin', 'siap', 'oke', 'deal', 'lanjut', 'jelas', 'paham', 'ngerti'],
+  negative: ['mahal', 'tidak suka', 'kecewa', 'buruk', 'jelek', 'tidak cocok', 'gagal',
+             'masalah', 'ribet', 'sulit', 'susah', 'lambat', 'lama sekali'],
+  frustrated: ['tidak nyambung', 'tidak paham', 'bingung banget', 'tidak mengerti', 'kok gitu',
+               'kenapa', 'ulang', 'tolong ulangi', 'tidak jelas', 'aneh', 'salah'],
+}
+
+function detectSentiment(text: string): Sentiment {
+  const t = text.toLowerCase()
+  let pos = 0, neg = 0, frust = 0
+  SENTIMENT_WORDS.positive.forEach(w => { if (t.includes(w)) pos++ })
+  SENTIMENT_WORDS.negative.forEach(w => { if (t.includes(w)) neg++ })
+  SENTIMENT_WORDS.frustrated.forEach(w => { if (t.includes(w)) frust++ })
+  if (frust >= 1) return { label: 'frustrated', score: -0.6 }
+  if (neg > pos)  return { label: 'negative',   score: -0.3 * neg }
+  if (pos > 0)    return { label: 'positive',   score:  0.3 * pos }
+  return { label: 'neutral', score: 0 }
+}
+
+// ─── TF-IDF FAQ Retriever ─────────────────────────────────────────────────────
+interface FAQDoc { id: string; question: string; intent: Intent; tfidf?: Map<string, number> }
+
+class TFIDFRetriever {
+  private docs: FAQDoc[] = []
+  private idf: Map<string, number> = new Map()
+
+  private tokenize(text: string): string[] {
+    return normalize(text).split(' ').filter(w => w.length > 1 && !STOPWORDS.has(w))
+  }
+
+  addDocs(docs: FAQDoc[]): void { this.docs.push(...docs) }
+
+  build(): void {
+    const N = this.docs.length
+    const df = new Map<string, number>()
+    for (const doc of this.docs) {
+      for (const w of new Set(this.tokenize(doc.question))) df.set(w, (df.get(w) || 0) + 1)
+    }
+    for (const [w, count] of df) this.idf.set(w, Math.log((N + 1) / (count + 1)) + 1)
+    for (const doc of this.docs) {
+      const words = this.tokenize(doc.question)
+      const tf = new Map<string, number>()
+      for (const w of words) tf.set(w, (tf.get(w) || 0) + 1)
+      const tfidf = new Map<string, number>()
+      for (const [w, c] of tf) tfidf.set(w, (c / words.length) * (this.idf.get(w) || 0))
+      doc.tfidf = tfidf
+    }
+  }
+
+  private cosine(a: Map<string, number>, b: Map<string, number>): number {
+    let dot = 0, mA = 0, mB = 0
+    for (const [w, va] of a) { dot += va * (b.get(w) || 0); mA += va * va }
+    for (const [, vb] of b) mB += vb * vb
+    return mA && mB ? dot / (Math.sqrt(mA) * Math.sqrt(mB)) : 0
+  }
+
+  query(text: string): { doc: FAQDoc; score: number } {
+    const words = this.tokenize(text)
+    if (words.length === 0) return { doc: this.docs[0], score: 0 }
+    const tf = new Map<string, number>()
+    for (const w of words) tf.set(w, (tf.get(w) || 0) + 1)
+    const qVec = new Map<string, number>()
+    for (const [w, c] of tf) qVec.set(w, (c / words.length) * (this.idf.get(w) || 0))
+    let best = { doc: this.docs[0], score: 0 }
+    for (const doc of this.docs) {
+      const score = this.cosine(qVec, doc.tfidf || new Map())
+      if (score > best.score) best = { doc, score }
+    }
+    return best
+  }
+}
+
+const FAQ_DOCS: FAQDoc[] = [
+  { id: 'q1',  question: 'berapa harga paket website toko online branding',        intent: 'price' },
+  { id: 'q2',  question: 'budget dana biaya investasi modal anggaran bayar',        intent: 'price' },
+  { id: 'q3',  question: 'cara order pesan layanan alur kerja prosedur mulai',      intent: 'process' },
+  { id: 'q4',  question: 'berapa lama waktu pengerjaan selesai deadline durasi',    intent: 'timeline' },
+  { id: 'q5',  question: 'revisi ubah ganti desain berapa kali edit ulang',         intent: 'revision' },
+  { id: 'q6',  question: 'metode bayar dp uang muka cicilan transfer gopay ovo',   intent: 'payment' },
+  { id: 'q7',  question: 'garansi jaminan komitmen akurasi after service support',  intent: 'commitment' },
+  { id: 'q8',  question: 'portofolio contoh hasil karya project sebelumnya',       intent: 'portfolio' },
+  { id: 'q9',  question: 'tim developer desainer programmer anggota karyawan',     intent: 'team' },
+  { id: 'q10', question: 'lokasi kantor alamat ketemu langsung meeting tatap muka', intent: 'location' },
+  { id: 'q11', question: 'toko online olshop e-commerce jualan produk belanja',    intent: 'product_ecommerce' },
+  { id: 'q12', question: 'website web design landing page booking reservasi',      intent: 'product_webdesign' },
+  { id: 'q13', question: 'logo branding brand identity identitas visual copywriting', intent: 'product_branding' },
+  { id: 'q14', question: 'semua produk layanan paket daftar jenis jasa',           intent: 'product_all' },
+  { id: 'q15', question: 'konsultasi saran rekomendasi paket cocok bantu pilih',   intent: 'consult' },
+  { id: 'q16', question: 'whatsapp hubungi kontak chat telepon',                   intent: 'whatsapp' },
+  { id: 'q17', question: 'kapan berdiri sejarah sejak mulai beroperasi umur',      intent: 'history' },
+  { id: 'q18', question: 'tentang profil perusahaan kinaryaloka studio siapa',     intent: 'about' },
+  { id: 'q19', question: 'visi misi nilai filosofi prinsip budaya kerja',          intent: 'values' },
+  { id: 'q20', question: 'syariah halal haram islam agama proyek larangan',        intent: 'sharia' },
+  { id: 'q21', question: 'maintenance update bug error setelah project selesai',   intent: 'after_project' },
+]
+
+const faqRetriever = new TFIDFRetriever()
+faqRetriever.addDocs(FAQ_DOCS)
+faqRetriever.build()
 
 // ─── Clarification Suggestion Options ──────────────────────────────────────────
 const CLARIFICATION_OPTIONS: { intent: Intent; chip: string }[] = [
@@ -251,79 +619,28 @@ const CLARIFICATION_OPTIONS: { intent: Intent; chip: string }[] = [
 function detectIntent(text: string): Intent {
   const t = normalize(text)
 
-  // Check dynamically learned keywords first
+  // 1. Dynamic learned keywords — highest priority
   for (const [word, intent] of dynamicKeywords) {
     if (t.includes(word)) return intent
   }
 
+  // 2. Rule-based: name intro (variable names can't be learned by NB)
   if (matchKeywords(t, ['nama saya', 'nama ku', 'panggil saya', 'perkenalkan', 'saya adalah']))
     return 'name_intro'
-  if (matchKeywords(t, ['lebih lanjut', 'ceritain lebih', 'jelaskan lebih', 'maksudnya', 'detail dong', 'contoh dong', 'gimana caranya', 'bisa diperjelas', 'elaborasi']))
-    return 'followup'
-  if (matchKeywords(t, ['halo', 'hai', 'hi', 'hello', 'selamat', 'pagi', 'siang', 'malam', 'sore', 'hei', 'hay', 'haloo', 'assalamualaikum', 'permisi']))
-    return 'greeting'
-  if (matchKeywords(t, ['sejak kapan', 'kapan berdiri', 'kapan didirikan', 'kapan mulai', 'sudah berapa lama', 'berdiri tahun', 'kapan beroperasi', 'mulai beroperasi', 'tahun berapa', 'kapan lahir', 'kapan dibuat', 'berumur']))
-    return 'history'
-  if (matchKeywords(t, ['siapa', 'apa itu', 'tentang kinaryaloka', 'kinaryaloka itu', 'kalian siapa', 'studio ini', 'profil', 'latar belakang']))
-    return 'about'
-  if (matchKeywords(t, ['nilai', 'value', 'filosofi', 'prinsip', 'visi', 'misi', 'budaya kerja']))
-    return 'values'
-  if (matchKeywords(t, ['proses', 'cara kerja', 'alur', 'langkah', 'tahap', 'prosedur', 'mulai dari', 'cara order', 'cara pesan']))
-    return 'process'
-  if (matchKeywords(t, ['komitmen', 'garansi', 'jaminan', 'akurasi', '247', '24 jam', '90%', '100%', 'garansi apa']))
-    return 'commitment'
-  if (matchKeywords(t, ['syariah', 'halal', 'islam', 'haram', 'larangan', 'agama']))
-    return 'sharia'
-  if (matchKeywords(t, ['bayar', 'pembayaran', 'metode bayar', 'transfer', 'dp ', 'uang muka', 'cicilan', 'tempo bayar', 'lunas']))
-    return 'payment'
-  if (matchKeywords(t, ['berapa lama', 'timeline', 'estimasi waktu', 'kapan selesai', 'deadline', 'lama pengerjaan', 'durasi', 'selesai kapan', 'waktu pengerjaan']))
-    return 'timeline'
-  if (matchKeywords(t, ['revisi', 'revision', 'ubah desain', 'ganti desain', 'edit ulang', 'tidak puas', 'bisa direvisi', 'berapa kali revisi']))
-    return 'revision'
-  if (matchKeywords(t, ['portofolio', 'portfolio', 'contoh hasil', 'karya', 'project sebelumnya', 'hasil kerja', 'pernah bikin']))
-    return 'portfolio'
-  if (matchKeywords(t, ['tim', 'team', 'siapa yang kerja', 'developer', 'desainer', 'programmer', 'staff', 'karyawan', 'anggota tim']))
-    return 'team'
-  if (matchKeywords(t, ['alamat', 'lokasi', 'kantor', 'offline', 'ketemu langsung', 'meeting', 'tatap muka', 'dimana kalian']))
-    return 'location'
-  if (matchKeywords(t, ['setelah project', 'after project', 'maintenance', 'support setelah', 'jika ada bug', 'update nanti', 'kelanjutan', 'garansi setelah']))
-    return 'after_project'
-  if (matchKeywords(t, ['ecommerce', 'e commerce', 'toko online', 'jualan online', 'olshop', 'belanja online', 'katalog digital']))
-    return 'product_ecommerce'
-  if (matchKeywords(t, ['website', 'web design', 'reservasi', 'booking', 'landing page', 'web profil', 'situs web']))
-    return 'product_webdesign'
-  if (matchKeywords(t, ['branding', 'logo', 'brand identity', 'identitas visual', 'copywriting', 'tagline', 'desain brand']))
-    return 'product_branding'
-  if (matchKeywords(t, ['semua produk', 'daftar produk', 'produk apa', 'layanan apa', 'paket apa', 'ada apa aja', 'ada berapa', 'berapa jenis', 'berapa paket', 'jenis jasa', 'jenis layanan', 'apa saja jasa', 'apa saja produk', 'apa saja layanan', 'sebutkan', 'produk', 'layanan', 'paket']))
-    return 'product_all'
-  if (matchKeywords(t, ['harga', 'biaya', 'tarif', 'berapa', 'budget', 'investasi', 'idr', 'bayar berapa', 'mahal', 'murah']))
-    return 'price'
-  if (matchKeywords(t, ['konsultasi', 'butuh bantuan', 'cocok buat', 'rekomen', 'saran dong', 'bantu pilih', 'pilih yang mana', 'bingung', 'tidak tahu mulai']))
-    return 'consult'
-  if (matchKeywords(t, ['tentang kami', 'about us', 'section tentang']))
-    return 'nav_tentang'
-  if (matchKeywords(t, ['lihat produk', 'ke produk', 'section produk']))
-    return 'nav_produk'
-  if (matchKeywords(t, ['komitmen kami', 'ke komitmen']))
-    return 'nav_komitmen'
-  if (matchKeywords(t, ['mengapa digital', 'kenapa digital', 'why digital']))
-    return 'nav_digital'
-  if (matchKeywords(t, ['whatsapp', 'chat langsung', 'hubungi', 'kontak', 'telepon', ' wa ']))
-    return 'whatsapp'
-  if (matchKeywords(t, ['terima kasih', 'makasih', 'thanks', 'thank you', 'oke siap', 'mantap', 'keren', 'helpful']))
-    return 'thanks'
 
-  // Fuzzy fallback: word-overlap scoring
-  const words = t.split(' ')
-  const scores: [Intent, number][] = [
-    ['product_ecommerce', words.filter(w => ['toko','jual','beli','produk','shop','dagang','order','belanja'].includes(w)).length],
-    ['product_webdesign', words.filter(w => ['web','halaman','page','desain','design','site','domain','situs'].includes(w)).length],
-    ['product_branding', words.filter(w => ['logo','brand','warna','visual','identitas','tampilan','ikon'].includes(w)).length],
-    ['price', words.filter(w => ['harga','biaya','bayar','mahal','murah','idr','ribu','juta'].includes(w)).length],
-    ['timeline', words.filter(w => ['lama','waktu','hari','minggu','bulan','selesai','cepat','kira'].includes(w)).length],
-  ]
-  const best = scores.sort((a, b) => b[1] - a[1])[0]
-  if (best[1] >= 1) return best[0]
+  // 3. Rule-based: nav shortcuts (very short phrases, NB less reliable)
+  if (matchKeywords(t, ['tentang kami', 'about us', 'section tentang'])) return 'nav_tentang'
+  if (matchKeywords(t, ['lihat produk', 'ke produk', 'section produk'])) return 'nav_produk'
+  if (matchKeywords(t, ['komitmen kami', 'ke komitmen'])) return 'nav_komitmen'
+  if (matchKeywords(t, ['mengapa digital', 'kenapa digital', 'why digital'])) return 'nav_digital'
+
+  // 4. Naive Bayes — primary intent engine
+  const { intent: nbIntent, confidence } = classifier.predict(text)
+  if (confidence >= 0.15) return nbIntent as Intent
+
+  // 5. TF-IDF FAQ retrieval — last resort before unknown
+  const { doc, score } = faqRetriever.query(text)
+  if (score >= 0.2) return doc.intent
 
   return 'unknown'
 }
@@ -375,6 +692,8 @@ function getResponse(
   }
 
   const name = ctx.userName ? `, **${ctx.userName}**` : ''
+  const entities = extractEntities(userText)
+  const sentiment = detectSentiment(userText)
 
   const updatedCtx: ConvContext = {
     ...ctx,
@@ -430,19 +749,112 @@ function getResponse(
     setConsult({ ...consult, step: 'done', budget })
     const { need, bisnisType } = consult
     const needLower = need.toLowerCase()
-    let pool = allProducts
-    if (needLower.includes('e-commerce') || needLower.includes('toko online')) pool = KB.products.ecommerce
-    else if (needLower.includes('website') || needLower.includes('booking')) pool = KB.products.webdesign
-    else if (needLower.includes('brand') || needLower.includes('logo')) pool = KB.products.branding
-    else if (needLower.includes('semuanya')) pool = allProducts.filter((p) => p.badge)
-    const recommended = pool.filter((p) => p.price <= budget).sort((a, b) => b.price - a.price).slice(0, 3)
-    const final = recommended.length > 0 ? recommended : pool.sort((a, b) => a.price - b.price).slice(0, 2)
+    const budgetStr = budget >= 1000 ? `${budget / 1000} juta` : `${budget}K`
+
+    // Build per-category needs list
+    type CatNeed = { label: string; products: typeof allProducts }
+    const catsNeeded: CatNeed[] = []
+    if (/e.commerce|toko online|olshop|jualan online/.test(needLower))
+      catsNeeded.push({ label: 'E-Commerce 🛒', products: KB.products.ecommerce })
+    if (/website|web|booking|reservasi|landing page/.test(needLower))
+      catsNeeded.push({ label: 'Web Design 🌐', products: KB.products.webdesign })
+    if (/brand|logo|branding|desain logo|identitas/.test(needLower))
+      catsNeeded.push({ label: 'Branding 🎨', products: KB.products.branding })
+    if (/semuanya|semua|lengkap/.test(needLower) || catsNeeded.length === 0)
+      catsNeeded.push(
+        { label: 'E-Commerce 🛒', products: KB.products.ecommerce },
+        { label: 'Web Design 🌐', products: KB.products.webdesign },
+        { label: 'Branding 🎨', products: KB.products.branding },
+      )
+
+    // Per-category: best within budget + absolute cheapest as fallback
+    const perCat = catsNeeded.map(cat => {
+      const asc = [...cat.products].sort((a, b) => a.price - b.price)
+      const withinBudget = asc.filter(p => p.price <= budget).sort((a, b) => b.price - a.price)
+      return { label: cat.label, withinBudget, cheapest: asc[0] }
+    })
+
+    const allCovered = perCat.every(c => c.withinBudget.length > 0)
+
+    if (allCovered) {
+      // Budget OK for all categories — show best pick per category
+      const final = perCat.map(c => c.withinBudget[0])
+      return [
+        makeBot(
+          `Berdasarkan bisnis **${bisnisType}** dengan kebutuhan **${need}** dan budget kamu, ini rekomendasi yang paling pas:`,
+          { products: final, chips: ['Konsultasi langsung via WA', 'Lihat semua produk', 'Mulai ulang konsultasi'] },
+        ),
+      ]
+    }
+
+    // Budget belum cukup — tampilkan 1 opsi termurah per kategori
+    const uncovered = perCat.filter(c => c.withinBudget.length === 0).map(c => c.label).join(', ')
+    const cheapestFinal = perCat.map(c => c.cheapest)
     return [
       makeBot(
-        `Berdasarkan bisnis **${bisnisType}** dengan kebutuhan **${need}** dan budget kamu, ini rekomendasi yang paling pas:`,
-        { products: final, chips: ['Konsultasi langsung via WA', 'Lihat semua produk', 'Mulai ulang konsultasi'] },
+        `Budget **${budgetStr}** kamu belum mencakup kebutuhan di **${uncovered}** 🙏\n\nBerikut **opsi termurah** dari masing-masing kategori yang kamu butuhkan sebagai referensi:`,
+        {
+          products: cheapestFinal,
+          chips: ['Diskusi budget via WA', 'Lihat semua produk', 'Mulai ulang konsultasi'],
+          waLink: `https://wa.me/${KB.company.whatsapp}?text=${encodeURIComponent(`Halo KINARYALOKA! Saya butuh bantuan menyesuaikan budget untuk ${need} bisnis ${bisnisType}.`)}`,
+        },
       ),
     ]
+  }
+
+  // ── Fast-track: direct product request outside consultation flow ──
+  if (
+    consult.step === 'idle' &&
+    (intent === 'product_ecommerce' || intent === 'product_webdesign' || intent === 'product_branding') &&
+    entities.productTypes &&
+    (entities.productTypes.length > 1 || entities.budget)
+  ) {
+    const catMap: Record<string, { label: string; products: typeof allProducts }> = {
+      ecommerce: { label: 'E-Commerce 🛒', products: KB.products.ecommerce },
+      webdesign: { label: 'Web Design 🌐', products: KB.products.webdesign },
+      branding:  { label: 'Branding 🎨',   products: KB.products.branding  },
+    }
+    const needParts: string[] = []
+    if (entities.productTypes.includes('ecommerce')) needParts.push('toko online / e-commerce')
+    if (entities.productTypes.includes('webdesign')) needParts.push('website / web design')
+    if (entities.productTypes.includes('branding')) needParts.push('branding & logo')
+    const detectedNeed = needParts.join(' dan ')
+    const catsNeeded = entities.productTypes.map(t => catMap[t])
+    const biznisType = entities.bizCategory || 'bisnis kamu'
+
+    if (entities.budget) {
+      const budget = entities.budget
+      const budgetStr = budget >= 1000 ? `${budget / 1000} juta` : `${budget}K`
+      setConsult({ step: 'done', bisnisType: biznisType, need: detectedNeed, budget })
+      const perCat = catsNeeded.map(cat => {
+        const asc = [...cat.products].sort((a, b) => a.price - b.price)
+        const withinBudget = asc.filter(p => p.price <= budget).sort((a, b) => b.price - a.price)
+        return { label: cat.label, withinBudget, cheapest: asc[0] }
+      })
+      const allCovered = perCat.every(c => c.withinBudget.length > 0)
+      if (allCovered) {
+        return [makeBot(
+          `Berdasarkan kebutuhan **${detectedNeed}** dan budget kamu (**${budgetStr}**), ini rekomendasi yang paling pas:`,
+          { products: perCat.map(c => c.withinBudget[0]), chips: ['Konsultasi langsung via WA', 'Lihat semua produk', 'Mulai ulang konsultasi'] },
+        )]
+      }
+      const uncovered = perCat.filter(c => c.withinBudget.length === 0).map(c => c.label).join(', ')
+      return [makeBot(
+        `Budget **${budgetStr}** kamu belum mencakup kebutuhan di **${uncovered}** 🙏\n\nBerikut **opsi termurah** dari masing-masing kategori sebagai referensi:`,
+        {
+          products: perCat.map(c => c.withinBudget.length > 0 ? c.withinBudget[0] : c.cheapest),
+          chips: ['Diskusi budget via WA', 'Lihat semua produk', 'Mulai ulang konsultasi'],
+          waLink: `https://wa.me/${KB.company.whatsapp}?text=${encodeURIComponent(`Halo KINARYALOKA! Saya butuh bantuan menyesuaikan budget untuk ${detectedNeed}.`)}`,
+        },
+      )]
+    }
+
+    // Multiple needs but no budget → fast-track to budget question
+    setConsult({ step: 'budget', bisnisType: biznisType, need: detectedNeed, budget: 0 })
+    return [makeBot(
+      `Sip${name}! Kamu butuh **${detectedNeed}** untuk bisnismu. 💡\n\nSatu lagi — kira-kira budget yang kamu siapkan berapa?`,
+      { chips: ['Di bawah 2 juta', '2–5 juta', '5–10 juta', '10 juta ke atas'] },
+    )]
   }
 
   // ── Normal intents ──
@@ -627,15 +1039,40 @@ Mau tahu lebih detail salah satu kategori?`,
         ),
       ]
 
-    case 'price':
+    case 'price': {
+      if (entities.budget) {
+        const allPkgs = [
+          ...KB.products.ecommerce.map(p => ({ ...p, cat: 'E-Commerce', icon: '🛒' })),
+          ...KB.products.webdesign.map(p => ({ ...p, cat: 'Web Design', icon: '🌐' })),
+          ...KB.products.branding.map(p => ({ ...p, cat: 'Branding', icon: '🎨' })),
+        ]
+        const matching  = allPkgs.filter(p => p.price <= entities.budget!)
+        const nearMatch = allPkgs.filter(p => p.price > entities.budget! && p.price <= entities.budget! * 1.4)
+        const budgetStr = entities.budget >= 1000 ? `${entities.budget / 1000} juta` : `${entities.budget}K`
+        if (matching.length > 0) {
+          const listText = matching.map(p => `${p.icon} **${p.name}** (${p.cat}) — IDR ${p.price.toLocaleString('id-ID')}K${p.badge ? ' ⭐' : ''}`).join('\n')
+          const nearText = nearMatch.length > 0
+            ? `\n\nSedikit di atas budget kamu:\n${nearMatch.map(p => `${p.icon} **${p.name}** — IDR ${p.price.toLocaleString('id-ID')}K`).join('\n')}`
+            : ''
+          return [makeBot(`Dengan budget **${budgetStr}**${name}, paket yang sesuai:\n\n${listText}${nearText}`, { chips: ['Mulai konsultasi', 'Metode pembayaran', 'Hubungi via WA'], nav: [{ label: 'Lihat detail produk', sectionId: 'produk' }] })]
+        } else {
+          const cheapest = [...allPkgs].sort((a, b) => a.price - b.price)[0]
+          return [makeBot(`Budget **${budgetStr}** saat ini di bawah paket termurah kami (IDR ${cheapest.price.toLocaleString('id-ID')}K).\n\nKami tetap bisa diskusi solusi terbaik — hubungi kami untuk konsultasi gratis!`, { chips: ['Hubungi via WA', 'Mulai konsultasi'], waLink: `https://wa.me/${KB.company.whatsapp}` })]
+        }
+      }
       return [
         makeBot(
           `**Ringkasan Harga KINARYALOKA:**\n\n🛒 **E-Commerce**\n• Katalog Digital — IDR 2.500K\n• Toko Online — IDR 5.000K\n• Olshop Full — IDR 8.000K\n• E-Commerce Full Brand — IDR 15.000K\n\n🌐 **Web Design**\n• Paket Reservasi — IDR 2.500K\n• Website & Reservasi — IDR 5.000K\n• Website Pro — IDR 8.000K\n• Full Digital Package — IDR 12.000K\n\n🎨 **Branding**\n• Paket Branding — IDR 1.500K\n• Branding + Copywriting — IDR 2.500K\n• Complete Branding — IDR 4.000K\n\nSemua harga transparan — tidak ada biaya tersembunyi.`,
           { chips: ['Mulai konsultasi', 'Metode pembayaran', 'Hubungi via WA'], nav: [{ label: 'Lihat detail produk', sectionId: 'produk' }] },
         ),
       ]
+    }
 
-    case 'consult':
+    case 'consult': {
+      if (entities.bizCategory) {
+        setConsult({ step: 'bisnis_need', bisnisType: entities.bizCategory, need: '', budget: 0 })
+        return [makeBot(`Bisnis di bidang **${entities.bizCategory}** ya${name}! 🎯\n\nLangsung ke pertanyaan kedua — apa kebutuhan utama kamu saat ini?`, { chips: ['Butuh toko online / e-commerce', 'Butuh website profil / booking', 'Butuh branding & logo', 'Butuh semuanya (paket lengkap)'] })]
+      }
       setConsult({ step: 'bisnis_type', bisnisType: '', need: '', budget: 0 })
       return [
         makeBot(
@@ -643,6 +1080,7 @@ Mau tahu lebih detail salah satu kategori?`,
           { chips: ['Kuliner / F&B', 'Fashion & Pakaian', 'Kecantikan & Salon', 'Jasa & Layanan', 'Retail / Toko Fisik', 'Lainnya'] },
         ),
       ]
+    }
 
     case 'history':
       return [
@@ -713,9 +1151,10 @@ Sejak hari pertama, fokus kami satu: membangun sistem digital yang benar-benar b
       // ── After 2 clarification loops, ask user to teach Nara ──
       if (newLoopCount > 2) {
         setCtx({ ...updatedCtx, clarifyLoopCount: newLoopCount, awaitingCustomContext: originalText, pendingClarification: null })
+        const frustPrefix = sentiment.label === 'frustrated' ? `Maaf kalau jawaban saya terus kurang tepat! 🙏\n\n` : ''
         return [
           makeBot(
-            `Saya sudah coba bantu 2 kali tapi belum menemukan yang tepat untuk **\u201c${originalText}\u201d** 😅\n\nBoleh bantu saya belajar? **Ceritain dalam 1–2 kalimat, apa yang kamu maksud dengan itu?** Saya akan simpan dan gunakan untuk menjawab lebih baik ke depannya!`,
+            `${frustPrefix}Saya sudah coba bantu 2 kali tapi belum menemukan yang tepat untuk **\u201c${originalText}\u201d** 😅\n\nBoleh bantu saya belajar? **Ceritain dalam 1–2 kalimat, apa yang kamu maksud dengan itu?** Saya akan simpan dan gunakan untuk menjawab lebih baik ke depannya!`,
             { chips: ['Hubungi via WA', 'Mulai Konsultasi'] },
           ),
         ]

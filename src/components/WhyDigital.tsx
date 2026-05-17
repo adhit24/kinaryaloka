@@ -1,6 +1,5 @@
 import { motion, useInView, useScroll, useTransform } from 'framer-motion'
 import { useRef, useEffect, useState } from 'react'
-import { MessageCircle } from 'lucide-react'
 
 const stats = [
   {
@@ -176,14 +175,7 @@ export default function WhyDigital() {
               Bisnis kamu bisa jadi salah satu yang 23% itu{' '}
               <span className="text-[#c9547a]">mulai dari satu langkah kecil.</span>
             </p>
-            <motion.button
-              className="bg-[#831449] text-white px-8 py-4 rounded-xl font-semibold flex items-center gap-2 whitespace-nowrap shadow-lg shadow-[#831449]/30"
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-            >
-              <MessageCircle className="w-5 h-5" />
-              Ngobrol Dulu Yuk?
-            </motion.button>
+
           </motion.div>
         </div>
       </div>
