@@ -1,5 +1,6 @@
 import { motion, useInView, useScroll, useTransform } from 'framer-motion'
 import { useRef, useEffect, useState } from 'react'
+import { ArrowRight } from 'lucide-react'
 
 const stats = [
   {
@@ -88,10 +89,9 @@ function StatCard({ stat, index, scrollYProgress }: {
 
   return (
     <motion.div
-      style={{ opacity, y, scale }}
+      style={{ opacity, y, scale, borderTopWidth: '3px', borderTopColor: stat.color }}
       className="bg-gradient-to-br from-[#1c1c1c] to-[#111] rounded-xl md:rounded-2xl p-3 md:p-6 border border-[#282828] relative overflow-hidden"
       whileHover={{ scale: 1.04, transition: { duration: 0.2 } }}
-      {...{ style: { borderTopWidth: '3px', borderTopColor: stat.color, opacity, y, scale } } as any}
     >
       <div
         className="absolute -right-8 -bottom-8 w-40 h-40 rounded-full blur-3xl opacity-10"
@@ -112,7 +112,7 @@ function StatCard({ stat, index, scrollYProgress }: {
           className="h-px w-full mb-2 md:mb-4"
           style={{ background: `linear-gradient(90deg, ${stat.color}, transparent)` }}
         />
-        <p className="text-gray-500 text-[10px] md:text-sm leading-relaxed hidden sm:block">{stat.description}</p>
+        <p className="text-gray-400 text-[10px] md:text-sm leading-relaxed hidden sm:block">{stat.description}</p>
       </div>
     </motion.div>
   )
@@ -175,7 +175,14 @@ export default function WhyDigital() {
               Bisnis kamu bisa jadi salah satu yang 23% itu{' '}
               <span className="text-[#c9547a]">mulai dari satu langkah kecil.</span>
             </p>
-
+            <motion.button
+              onClick={() => document.getElementById('produk')?.scrollIntoView({ behavior: 'smooth' })}
+              className="flex-shrink-0 flex items-center gap-2 bg-[#831449] hover:bg-[#6a113a] text-white font-semibold px-6 py-3 rounded-xl transition-colors duration-200 cursor-pointer whitespace-nowrap"
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+            >
+              Mulai Sekarang <ArrowRight className="w-4 h-4" />
+            </motion.button>
           </motion.div>
         </div>
       </div>

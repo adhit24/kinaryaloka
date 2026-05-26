@@ -58,7 +58,7 @@ function MagicCard({
           ? `0 ${shadowY.get()}px ${shadowBlur.get()}px -12px ${accentColor}80, 0 20px 40px -8px rgba(0,0,0,0.3)`
           : '0 4px 16px rgba(0,0,0,0.15)',
       }}
-      className={`relative rounded-2xl overflow-hidden bg-[#fefefe] cursor-none${fullHeight ? ' flex flex-col h-full' : ''}`}
+      className={`relative rounded-2xl overflow-hidden bg-[#fefefe] cursor-pointer${fullHeight ? ' flex flex-col h-full' : ''}`}
       onMouseMove={handleMouseMove}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={handleLeave}
@@ -273,7 +273,7 @@ export default function Products() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className="relative px-5 md:px-7 py-2.5 md:py-3 rounded-xl font-semibold text-sm md:text-base whitespace-nowrap transition-colors duration-200 outline-none"
+                  className="relative px-5 md:px-7 py-2.5 md:py-3 rounded-xl font-semibold text-sm md:text-base whitespace-nowrap transition-colors duration-200 outline-none cursor-pointer"
                   style={{ color: isActive ? '#fff' : '#666' }}
                 >
                   {/* Sliding pill background */}
@@ -330,6 +330,7 @@ export default function Products() {
                 src={currentProducts.featured.image}
                 alt={currentProducts.featured.title}
                 className="w-full h-full object-cover"
+                loading="lazy"
                 whileHover={{ scale: 1.08 }}
                 transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
               />
@@ -383,10 +384,10 @@ export default function Products() {
               {/* Detail Link */}
               <button
                 onClick={() => setDetailProduct(currentProducts.featured!)}
-                className="absolute top-8 right-8 text-lg font-semibold flex items-center gap-1 hover:underline"
+                className="absolute top-8 right-8 text-lg font-semibold flex items-center gap-1.5 hover:underline cursor-pointer transition-colors duration-200"
                 style={{ color: currentProducts.featured.textColor }}
               >
-                Detail &gt;
+                Detail <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -411,6 +412,7 @@ export default function Products() {
                     src={product.image}
                     alt={product.title}
                     className="w-full h-full object-cover"
+                    loading="lazy"
                     whileHover={{ scale: 1.1 }}
                     transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
                   />

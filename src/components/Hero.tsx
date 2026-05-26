@@ -11,13 +11,13 @@ export default function Hero() {
   const isoOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0])
 
   return (
-    <section ref={sectionRef} className="min-h-screen bg-white pt-20 md:pt-28 lg:pt-32 pb-12 md:pb-20 relative overflow-hidden">
+    <section ref={sectionRef} className="min-h-screen bg-white pt-20 md:pt-28 lg:pt-32 pb-12 md:pb-20 relative overflow-hidden w-full">
       <div className="max-w-[1600px] mx-auto px-4 sm:px-8 lg:px-16 py-6 md:py-16">
-        <div className="flex flex-col lg:grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+        <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 lg:gap-16 items-center w-full min-w-0">
 
           {/* Isometric - shows on top on mobile */}
           <motion.div
-            className="relative w-full order-first lg:order-last"
+            className="relative w-full order-first lg:order-last min-w-0"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.3 }}
@@ -30,7 +30,7 @@ export default function Hero() {
               <img
                 src="/Assets/isometric.png"
                 alt="Digital Workspace"
-                className="w-full max-w-[320px] sm:max-w-[420px] md:max-w-[520px] lg:max-w-[700px] mx-auto object-contain"
+                className="w-full max-w-[260px] xs:max-w-[300px] sm:max-w-[420px] md:max-w-[520px] lg:max-w-[700px] mx-auto object-contain"
               />
             </motion.div>
           </motion.div>
@@ -40,14 +40,14 @@ export default function Hero() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="space-y-5 md:space-y-8 order-last lg:order-first"
+            className="space-y-5 md:space-y-8 order-last lg:order-first w-full min-w-0"
           >
             {/* Title Images */}
-            <div className="space-y-2 md:space-y-3">
+            <div className="space-y-2 md:space-y-3 w-full">
               <motion.img
                 src="/Assets/Bisnis Kamu.png"
                 alt="Bisnis Kamu"
-                className="h-[44px] sm:h-[58px] md:h-[70px] lg:h-[78px] object-contain"
+                className="h-[36px] sm:h-[52px] md:h-[70px] lg:h-[78px] object-contain object-left max-w-full"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
@@ -55,34 +55,34 @@ export default function Hero() {
               <motion.img
                 src="/Assets/Butuh Lebih Dari.png"
                 alt="Butuh Lebih Dari"
-                className="h-[44px] sm:h-[58px] md:h-[70px] lg:h-[78px] object-contain"
+                className="h-[36px] sm:h-[52px] md:h-[70px] lg:h-[78px] object-contain object-left max-w-full"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
               />
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                 <motion.img
                   src="/Assets/Sekedar.png"
                   alt="Sekedar"
-                  className="h-[44px] sm:h-[58px] md:h-[70px] lg:h-[78px] object-contain"
+                  className="h-[36px] sm:h-[52px] md:h-[70px] lg:h-[78px] object-contain object-left max-w-full"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.5 }}
                 />
                 <motion.div
-                  className="bg-[#272727] rounded-lg md:rounded-xl px-3 md:px-6 py-2 md:py-4 h-[52px] md:h-[68px] lg:h-[78px] flex items-center"
+                  className="bg-[#272727] rounded-lg md:rounded-xl px-3 md:px-6 py-2 md:py-4 h-[44px] sm:h-[52px] md:h-[68px] lg:h-[78px] flex items-center flex-shrink-0"
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.6 }}
                 >
-                  <img src="/Assets/Hadir.png" alt="Hadir" className="h-[32px] md:h-[44px] lg:h-[50px] object-contain" />
+                  <img src="/Assets/Hadir.png" alt="Hadir" className="h-[26px] sm:h-[32px] md:h-[44px] lg:h-[50px] object-contain" />
                 </motion.div>
               </div>
             </div>
 
             {/* Description */}
             <motion.p
-              className="text-[#828282] text-[14px] sm:text-[16px] md:text-[18px] max-w-[587px] leading-relaxed text-justify"
+              className="text-[#828282] text-[13px] sm:text-[15px] md:text-[18px] max-w-full sm:max-w-[587px] leading-relaxed"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.7 }}

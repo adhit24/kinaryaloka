@@ -84,6 +84,7 @@ export default function About() {
                       src={card.image}
                       alt={card.title.join(' ')}
                       className="absolute inset-0 w-full h-full object-cover"
+                      loading="lazy"
                       draggable={false}
                       initial={{ opacity: 0, scale: 0.92 }}
                       animate={isInView ? { opacity: 1, scale: 1 } : {}}

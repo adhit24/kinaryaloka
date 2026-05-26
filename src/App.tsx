@@ -9,6 +9,7 @@ import WhyDigital from './components/WhyDigital'
 import Process from './components/Process'
 import Footer from './components/Footer'
 import PainPoints from './components/PainPoints'
+import MarketplaceExodus from './components/MarketplaceExodus'
 import FloatingWA from './components/FloatingWA'
 import Chatbot from './components/Nara'
 import AdminPanel from './components/AdminPanel'
@@ -50,7 +51,7 @@ function MainSite() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-[#f5f5f5]">
+    <div className="min-h-screen bg-[#f5f5f5] overflow-x-hidden">
       <ScrollProgressBar />
       <FloatingWA />
       <Chatbot />
@@ -60,6 +61,7 @@ function MainSite() {
           <Hero />
           <About />
           <PainPoints />
+          <MarketplaceExodus />
           <Products />
           <Team />
           <WhyDigital />

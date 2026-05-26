@@ -54,11 +54,16 @@ export default function Footer() {
 
             {/* Social Icons */}
             <div className="flex gap-3">
-              {[Instagram, MessageCircle, Music2].map((Icon, index) => (
+              {[
+                { Icon: Instagram, label: 'Instagram' },
+                { Icon: MessageCircle, label: 'WhatsApp' },
+                { Icon: Music2, label: 'TikTok' },
+              ].map(({ Icon, label }) => (
                 <motion.a
-                  key={index}
+                  key={label}
                   href="#"
-                  className="w-10 h-10 rounded-lg bg-[#3a3a3a] flex items-center justify-center hover:bg-[#831449] transition-colors"
+                  aria-label={label}
+                  className="w-10 h-10 rounded-lg bg-[#3a3a3a] flex items-center justify-center hover:bg-[#831449] transition-colors duration-200 cursor-pointer"
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -132,7 +137,7 @@ export default function Footer() {
               />
             </div>
             <motion.button
-              className="bg-gray-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-600 transition-colors"
+              className="bg-[#831449] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#6a113a] transition-colors duration-200 cursor-pointer"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >

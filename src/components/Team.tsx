@@ -133,6 +133,7 @@ export default function Team() {
                       src={card.image}
                       alt={card.label}
                       className="w-full h-full object-cover"
+                      loading="lazy"
                       draggable={false}
                     />
                   </div>
@@ -164,7 +165,8 @@ export default function Team() {
           {/* Left arrow */}
           <motion.button
             onClick={prev}
-            className="absolute -left-4 md:-left-16 z-20 w-12 h-12 rounded-full flex items-center justify-center text-white border border-white/20 backdrop-blur-sm"
+            aria-label="Komitmen sebelumnya"
+            className="absolute -left-4 md:-left-16 z-20 w-12 h-12 rounded-full flex items-center justify-center text-white border border-white/20 backdrop-blur-sm cursor-pointer"
             style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}
             whileHover={{ scale: 1.12, backgroundColor: 'rgba(255,255,255,0.18)' }}
             whileTap={{ scale: 0.92 }}
@@ -175,7 +177,8 @@ export default function Team() {
           {/* Right arrow */}
           <motion.button
             onClick={next}
-            className="absolute -right-4 md:-right-16 z-20 w-12 h-12 rounded-full flex items-center justify-center text-white border border-white/20 backdrop-blur-sm"
+            aria-label="Komitmen berikutnya"
+            className="absolute -right-4 md:-right-16 z-20 w-12 h-12 rounded-full flex items-center justify-center text-white border border-white/20 backdrop-blur-sm cursor-pointer"
             style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}
             whileHover={{ scale: 1.12, backgroundColor: 'rgba(255,255,255,0.18)' }}
             whileTap={{ scale: 0.92 }}
@@ -190,7 +193,8 @@ export default function Team() {
             <motion.button
               key={i}
               onClick={() => setActive(i)}
-              className="rounded-full"
+              aria-label={`Lihat komitmen ${card.label}`}
+              className="rounded-full cursor-pointer"
               animate={{
                 width: i === active ? 28 : 8,
                 height: 8,

@@ -1,6 +1,6 @@
 import { motion, useInView } from 'framer-motion'
 import { useRef } from 'react'
-import { MessageCircle } from 'lucide-react'
+import { MessageCircle, CheckCircle2 } from 'lucide-react'
 
 const steps = [
   {
@@ -87,9 +87,14 @@ export default function Process() {
                 <MessageCircle className="w-5 h-5 text-green-400" />
                 Ngobrol Dulu Yuk?
               </motion.button>
-              <p className="text-gray-400 text-sm leading-relaxed">
-                ✓ Gratis konsultasi 30 menit &nbsp;·&nbsp; ✓ Tanpa komitmen &nbsp;·&nbsp; ✓ Tanpa dipaksa beli
-              </p>
+              <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-gray-400 text-sm">
+                {['Gratis konsultasi 30 menit', 'Tanpa komitmen', 'Tanpa dipaksa beli'].map((item) => (
+                  <span key={item} className="flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
+                    {item}
+                  </span>
+                ))}
+              </div>
             </div>
           </motion.div>
 
