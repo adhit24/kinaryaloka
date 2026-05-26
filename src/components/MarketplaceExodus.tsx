@@ -37,7 +37,7 @@ const C = {
 };
 
 const gradAmber = `linear-gradient(135deg, ${C.orange}, #f5a55a)`;
-const gradBlue  = `linear-gradient(135deg, ${C.blueD}, ${C.blue})`;
+
 const gradRed   = `linear-gradient(135deg, ${C.red}, #f87171)`;
 
 /* ─── Helpers ─── */
