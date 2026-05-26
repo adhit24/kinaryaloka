@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm run build && cp -r Assets dist/Assets",
+  "buildCommand": "npm run build && node -e \"const fs=require('fs');const path=require('path');function cp(s,d){if(!fs.existsSync(d))fs.mkdirSync(d,{recursive:true});for(const f of fs.readdirSync(s)){const sp=path.join(s,f),dp=path.join(d,f);fs.statSync(sp).isDirectory()?cp(sp,dp):fs.copyFileSync(sp,dp)}}cp('Assets','dist/Assets')\"",
   "outputDirectory": "dist",
   "framework": "vite",
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
