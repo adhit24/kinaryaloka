@@ -548,58 +548,191 @@ export default function MarketplaceExodus() {
         </div>
 
         {/* ══ 6. DATABASE: HARTA KARUN ══ */}
-        <div className="mb-10 md:mb-16 lg:mb-20">
-          <FadeUp className="text-center mb-6 md:mb-10">
-            <SectionLabel color={C.blue}>Nilai yang Paling Sering Dilewatkan</SectionLabel>
-            <h3 className="font-poppins font-extrabold text-[19px] sm:text-2xl md:text-3xl lg:text-4xl text-white leading-tight">
-              Database Pelanggan:{" "}
-              <GradText grad={gradBlue}>Harta Karun yang Kamu Buang</GradText>
-            </h3>
-            <p className="text-[12px] md:text-sm lg:text-base mt-3 max-w-2xl mx-auto leading-relaxed" style={{ color: C.subtle }}>
-              Di marketplace, kamu mungkin punya 1.000 pembeli. Tapi coba jawab:{" "}
-              <strong className="text-white/80">kamu tahu nama, nomor HP, dan kebiasaan belanja mereka?</strong>
+        <div className="mb-10 md:mb-16 lg:mb-20 relative">
+
+          {/* ── Section glow backdrop ── */}
+          <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-3xl">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[300px] rounded-full blur-[120px] opacity-[0.12]"
+              style={{ background: `radial-gradient(ellipse, ${C.blue} 0%, transparent 70%)` }} />
+          </div>
+
+          {/* ── Header block ── */}
+          <FadeUp className="text-center mb-8 md:mb-14 relative">
+            <div className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 mb-5"
+              style={{ background: `${C.blue}18`, border: `1px solid ${C.blue}35` }}>
+              <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: C.blue }} />
+              <span className="text-[10px] font-bold tracking-[0.22em] uppercase" style={{ color: C.blue }}>
+                Nilai yang Paling Sering Dilewatkan
+              </span>
+            </div>
+
+            {/* Oversized display heading */}
+            <div className="relative mb-4">
+              <h3 className="font-poppins font-black text-[26px] sm:text-4xl md:text-5xl lg:text-6xl text-white leading-[1.05] tracking-tight">
+                Database Pelanggan:
+              </h3>
+              <div className="relative inline-block mt-1 md:mt-2">
+                <span
+                  className="font-poppins font-black text-[26px] sm:text-4xl md:text-5xl lg:text-6xl leading-[1.05] tracking-tight block"
+                  style={{
+                    background: `linear-gradient(135deg, ${C.blue} 0%, #60a5fa 40%, ${C.blueD} 100%)`,
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    backgroundClip: "text",
+                  }}
+                >
+                  Harta Karun yang Kamu Buang
+                </span>
+                {/* underline accent */}
+                <motion.div
+                  className="absolute -bottom-1 left-0 h-[3px] rounded-full"
+                  style={{ background: `linear-gradient(90deg, ${C.blue}, transparent)` }}
+                  initial={{ width: 0 }}
+                  whileInView={{ width: "60%" }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.9, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                />
+              </div>
+            </div>
+
+            <p className="text-[13px] md:text-base lg:text-lg mt-5 max-w-xl mx-auto leading-relaxed" style={{ color: C.subtle }}>
+              Di marketplace, kamu mungkin punya{" "}
+              <span className="font-bold text-white/80">1.000 pembeli</span>.
+              Tapi coba jawab:{" "}
+              <em className="not-italic font-bold" style={{ color: C.blue }}>
+                kamu tahu nama, nomor HP, dan kebiasaan belanja mereka?
+              </em>
             </p>
           </FadeUp>
 
-          {/* Stats — horizontal scroll mobile, 3-col desktop */}
-          <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-3 -mx-4 px-4 mb-4
-                          sm:mx-0 sm:px-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:pb-0 sm:mb-6 md:mb-8">
+          {/* ── 3 Big Stat Cards ── */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 mb-6 md:mb-10">
             {[
-              { number: "5×",      label: "lebih murah",          desc: "Menjual ke pelanggan lama vs menarik pelanggan baru", color: C.blue },
-              { number: "60–70%",  label: "kemungkinan beli lagi", desc: "Pelanggan existing yang pernah puas dengan produkmu",  color: C.orange },
-              { number: "0 Rupiah",label: "biaya remarketing",     desc: "Kirim promo WhatsApp ke database pelangganmu sendiri", color: C.blue },
-            ].map((s) => (
-              <div
+              {
+                number: "5×",
+                label: "Lebih Murah",
+                sub: "jual ke pelanggan lama vs cari pelanggan baru",
+                color: C.blue,
+                grad: `linear-gradient(135deg, ${C.blueD}22, ${C.blue}18)`,
+              },
+              {
+                number: "60–70%",
+                label: "Kemungkinan Beli Lagi",
+                sub: "pelanggan existing yang pernah puas dengan produkmu",
+                color: C.orange,
+                grad: `linear-gradient(135deg, ${C.orange}18, ${C.orange}08)`,
+              },
+              {
+                number: "Rp 0",
+                label: "Biaya Remarketing",
+                sub: "kirim promo WhatsApp langsung ke database-mu sendiri",
+                color: C.blue,
+                grad: `linear-gradient(135deg, ${C.blueD}22, ${C.blue}10)`,
+              },
+            ].map((s, i) => (
+              <motion.div
                 key={s.label}
-                className="rounded-2xl p-4 md:p-6 text-center flex-shrink-0 w-[60vw] sm:w-auto snap-start"
-                style={{ background: `${s.color}0e`, border: `1px solid ${s.color}25` }}
+                initial={{ opacity: 0, y: 36 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-40px" }}
+                transition={{ duration: 0.6, delay: i * 0.12, ease: [0.16, 1, 0.3, 1] }}
+                className="relative rounded-2xl md:rounded-3xl p-5 md:p-7 overflow-hidden group cursor-default"
+                style={{ background: s.grad, border: `1px solid ${s.color}30` }}
               >
-                <p className="font-poppins font-extrabold text-[28px] md:text-4xl mb-1" style={{ color: s.color }}>{s.number}</p>
-                <p className="font-bold text-white text-[12px] md:text-sm mb-1">{s.label}</p>
-                <p className="text-[10px] md:text-xs leading-relaxed" style={{ color: C.muted }}>{s.desc}</p>
-              </div>
+                {/* Top accent bar */}
+                <div className="absolute top-0 left-0 right-0 h-[3px] rounded-t-3xl"
+                  style={{ background: `linear-gradient(90deg, ${s.color}, transparent)` }} />
+
+                {/* Glow blob */}
+                <div className="absolute -bottom-6 -right-6 w-32 h-32 rounded-full blur-2xl opacity-0 group-hover:opacity-[0.18] transition-opacity duration-500 pointer-events-none"
+                  style={{ background: s.color }} />
+
+                {/* Big number */}
+                <motion.p
+                  className="font-black leading-none mb-2 tracking-tight"
+                  style={{
+                    fontFamily: "'Poppins', sans-serif",
+                    fontSize: "clamp(2.4rem, 7vw, 3.8rem)",
+                    background: `linear-gradient(135deg, #ffffff, ${s.color})`,
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    backgroundClip: "text",
+                  }}
+                  initial={{ opacity: 0, scale: 0.7 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: 0.2 + i * 0.12, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  {s.number}
+                </motion.p>
+
+                <p className="font-bold text-white text-[13px] md:text-[15px] mb-1.5 leading-snug">{s.label}</p>
+                <div className="h-px mb-2.5 w-8 rounded-full" style={{ background: `${s.color}60` }} />
+                <p className="text-[11px] md:text-xs leading-relaxed" style={{ color: C.muted }}>{s.sub}</p>
+              </motion.div>
             ))}
           </div>
 
-          {/* Benefit cards — 1 col mobile, 2 col sm+ */}
+          {/* ── Benefit cards — bold redesign ── */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
             {dbBenefits.map((b, i) => (
-              <FadeUp key={b.title} delay={i * 0.07}>
-                <div className="rounded-2xl p-4 md:p-5 h-full"
-                  style={{ background: C.card, border: `1px solid ${C.border2}` }}>
+              <motion.div
+                key={b.title}
+                initial={{ opacity: 0, x: i % 2 === 0 ? -20 : 20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true, margin: "-40px" }}
+                transition={{ duration: 0.55, delay: i * 0.09, ease: [0.16, 1, 0.3, 1] }}
+                className="relative rounded-2xl p-4 md:p-6 overflow-hidden group cursor-default"
+                style={{ background: C.card, border: `1px solid ${C.border2}` }}
+              >
+                {/* Hover bg glow */}
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-400 rounded-2xl pointer-events-none"
+                  style={{ background: `radial-gradient(ellipse at top left, ${b.color}0a 0%, transparent 60%)` }} />
+
+                {/* Left accent border */}
+                <div className="absolute left-0 top-4 bottom-4 w-[3px] rounded-r-full"
+                  style={{ background: `linear-gradient(180deg, ${b.color}, ${b.color}30)` }} />
+
+                <div className="pl-3 relative">
+                  {/* Icon + title row */}
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                      style={{ background: `${b.color}18` }}>
-                      <b.icon size={16} style={{ color: b.color }} />
+                    <div className="w-10 h-10 md:w-11 md:h-11 rounded-xl flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110"
+                      style={{ background: `${b.color}18`, boxShadow: `0 0 0 1px ${b.color}25` }}>
+                      <b.icon size={17} style={{ color: b.color }} />
                     </div>
-                    <h4 className="font-bold text-white text-[13px] md:text-base leading-snug">{b.title}</h4>
+                    <h4 className="font-bold text-white text-[13px] md:text-[15px] leading-snug">{b.title}</h4>
                   </div>
-                  <div className="h-[1.5px] rounded-full mb-3 w-8" style={{ background: b.color }} />
-                  <p className="text-[12px] md:text-sm leading-relaxed" style={{ color: C.subtle }}>{b.desc}</p>
+
+                  <p className="text-[12px] md:text-[13px] leading-relaxed" style={{ color: C.subtle }}>{b.desc}</p>
                 </div>
-              </FadeUp>
+              </motion.div>
             ))}
           </div>
+
+          {/* ── Bottom callout strip ── */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="mt-4 md:mt-6 rounded-2xl px-5 py-4 md:px-7 md:py-5 flex flex-col sm:flex-row items-start sm:items-center gap-3"
+            style={{
+              background: `linear-gradient(135deg, ${C.blueD}20, ${C.blue}10)`,
+              border: `1px solid ${C.blue}25`,
+            }}
+          >
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+              style={{ background: `${C.blue}20` }}>
+              <Star size={16} style={{ color: C.blue }} />
+            </div>
+            <p className="text-[12px] md:text-sm leading-relaxed flex-1" style={{ color: C.subtle }}>
+              <strong className="text-white font-bold">Ingat:</strong>{" "}
+              Di marketplace, data pelangganmu{" "}
+              <strong style={{ color: C.red }}>bukan milikmu</strong>.
+              {" "}Mereka bisa pakai data itu untuk iklankan produk kompetitormu. Di website sendiri?{" "}
+              <strong className="text-white">100% data adalah milikmu.</strong>
+            </p>
+          </motion.div>
         </div>
 
         {/* ══ 7. 6 KEUNGGULAN SISTEM SENDIRI ══ */}
